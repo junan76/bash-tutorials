@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+"""
+Generic auto-grader for shell exercises.
+
+Usage:
+    grader/grade exercises/01-variables
+
+Each exercise dir must contain a tests/ directory with one or more .yml specs.
+See grader/README.md for the spec format.
+"""
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+try:
+    import yaml
+except ImportError:
+    sys.stderr.write("error: PyYAML required (pip install pyyaml)\n")
+    sys.exit(2)
+
+GREEN = "\033[32m"
+RED = "\033[31m"
+YELLOW = "\033[33m"
+DIM = "\033[2m"
+RESET = "\033[0m"
+
+
+def color(s, c):
+    return f"{c}{s}{RESET}" if sys.stdout.isatty() else s
+
+
+def check_stream(name, content, expect, failures):
+    if name in expect:
+        want = expect[name].rstrip("\n")
+        got = content.rstrip("\n")
+        if got != want:
+            failures.append(f"{name}: expected {want!r}, got {got!r}")
+    if f"{name}_contains" in expect:
+        want = expect[f"{name}_contains"]
+        if want not in content:
+            failures.append(f"{name} missing substring {want!r}")
+    if f"{name}_matches" in expect:
+        pat = expect[f"{name}_matches"]
+        if not re.search(pat, content, re.MULTILINE):
+            failures.append(f"{name} did not match regex {pat!r}")
+
+
+def check_files(tmp, file_specs, failures):
+    for fs in file_specs:
+        path = tmp / fs["path"]
+        if "exists" in fs:
+            actual = path.exists()
+            if actual != fs["exists"]:
+                failures.append(
+                    f"file {fs['path']}: expected exists={fs['exists']}, got {actual}"
+                )
+                continue
+        if "contains" in fs:
+            if not path.exists():
+                failures.append(f"file {fs['path']}: missing, cannot check contents")
+                continue
+            if fs["contains"] not in path.read_text():
+                failures.append(
+                    f"file {fs['path']}: missing substring {fs['contains']!r}"
+                )
+        if "matches" in fs:
+            if not path.exists():
+                failures.append(f"file {fs['path']}: missing, cannot check pattern")
+                continue
+            if not re.search(fs["matches"], path.read_text(), re.MULTILINE):
+                failures.append(
+                    f"file {fs['path']}: did not match regex {fs['matches']!r}"
+                )
+
+
+def run_test(spec_path, exercise_dir):
+    spec = yaml.safe_load(spec_path.read_text())
+    name = spec.get("name", spec_path.stem)
+    points = spec.get("points", 1)
+    setup = spec.get("setup", "")
+    run_cmd = spec.get("run")
+    expect = spec.get("expect", {})
+    timeout = spec.get("timeout", 10)
+
+    if not run_cmd:
+        return name, False, 0, points, "spec missing 'run'"
+
+    with tempfile.TemporaryDirectory() as tmp_str:
+        tmp = Path(tmp_str)
+        env = os.environ.copy()
+        env["EXERCISE_DIR"] = str(exercise_dir.resolve())
+
+        if setup:
+            r = subprocess.run(
+                ["bash", "-c", setup],
+                cwd=tmp, env=env, capture_output=True, text=True,
+            )
+            if r.returncode != 0:
+                return name, False, 0, points, f"setup failed:\n{r.stderr.strip()}"
+
+        try:
+            r = subprocess.run(
+                ["bash", "-c", run_cmd],
+                cwd=tmp, env=env, capture_output=True, text=True,
+                timeout=timeout,
+            )
+        except subprocess.TimeoutExpired:
+            return name, False, 0, points, f"timed out after {timeout}s"
+
+        failures = []
+        if "exit" in expect and r.returncode != expect["exit"]:
+            failures.append(f"exit: expected {expect['exit']}, got {r.returncode}")
+        check_stream("stdout", r.stdout, expect, failures)
+        check_stream("stderr", r.stderr, expect, failures)
+        check_files(tmp, expect.get("files", []), failures)
+
+        if failures:
+            return name, False, 0, points, "\n    ".join(failures)
+        return name, True, points, points, None
+
+
+def grade(exercise_dir):
+    exercise_dir = Path(exercise_dir).resolve()
+    tests_dir = exercise_dir / "tests"
+    if not tests_dir.is_dir():
+        sys.stderr.write(f"error: no tests/ directory in {exercise_dir}\n")
+        return 2
+
+    specs = sorted(list(tests_dir.glob("*.yml")) + list(tests_dir.glob("*.yaml")))
+    if not specs:
+        sys.stderr.write(f"error: no .yml test specs in {tests_dir}\n")
+        return 2
+
+    print(f"Running tests for: {color(exercise_dir.name, YELLOW)}")
+    print("─" * 50)
+
+    earned = total = failed = 0
+    for spec in specs:
+        name, passed, pts, pts_total, msg = run_test(spec, exercise_dir)
+        earned += pts
+        total += pts_total
+        if passed:
+            print(f"  {color('✓', GREEN)} {name} {color(f'({pts_total} pts)', DIM)}")
+        else:
+            failed += 1
+            print(f"  {color('✗', RED)} {name} {color(f'(0/{pts_total} pts)', DIM)}")
+            for line in msg.split("\n"):
+                print(f"      {color(line, DIM)}")
+
+    print("─" * 50)
+    pct = 100 * earned / total if total else 0
+    summary_color = GREEN if failed == 0 else (YELLOW if earned > 0 else RED)
+    print(f"Score: {color(f'{earned}/{total} ({pct:.0f}%)', summary_color)}")
+    return 0 if failed == 0 else 1
+
+
+def main():
+    p = argparse.ArgumentParser(description="Generic shell-exercise auto-grader")
+    p.add_argument("exercise", help="path to exercise directory containing tests/")
+    args = p.parse_args()
+    sys.exit(grade(args.exercise))
+
+
+if __name__ == "__main__":
+    main()

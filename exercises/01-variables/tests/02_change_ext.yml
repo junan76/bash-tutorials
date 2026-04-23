@@ -1,0 +1,19 @@
+name: change-ext 改扩展名且不动其他文件
+points: 3
+setup: |
+  mkdir notes
+  touch notes/a.txt notes/b.txt notes/c.md
+run: bash "$EXERCISE_DIR/starter/rename.sh" change-ext txt md notes
+expect:
+  exit: 0
+  files:
+    - path: notes/a.md
+      exists: true
+    - path: notes/b.md
+      exists: true
+    - path: notes/a.txt
+      exists: false
+    - path: notes/b.txt
+      exists: false
+    - path: notes/c.md
+      exists: true
