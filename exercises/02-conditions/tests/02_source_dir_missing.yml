@@ -1,0 +1,8 @@
+name: check_source_dir 拒绝不存在的路径
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/check.sh"
+  check_source_dir /no/such/path
+expect:
+  exit: 1
+  stderr_contains: "不存在"

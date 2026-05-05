@@ -1,0 +1,13 @@
+name: scan_top_entries 列出一级条目（文件 + 目录）
+points: 2
+setup: |
+  mkdir -p src/sub
+  touch src/file.txt
+run: |
+  source "$EXERCISE_DIR/starter/lib/scan.sh"
+  scan_top_entries src
+expect:
+  exit: 0
+  stdout: |
+    file.txt
+    sub

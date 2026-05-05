@@ -1,0 +1,7 @@
+name: filter_match 字符集模式 [0-9]
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/filter.sh"
+  filter_match "file7.bak" "file[0-9].bak"
+expect:
+  exit: 0

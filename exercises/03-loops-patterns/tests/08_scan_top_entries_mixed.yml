@@ -1,0 +1,15 @@
+name: scan_top_entries 混合文件与目录按字典序
+points: 1
+setup: |
+  mkdir -p src/dir1 src/dir2
+  touch src/a.txt src/z.txt
+run: |
+  source "$EXERCISE_DIR/starter/lib/scan.sh"
+  scan_top_entries src
+expect:
+  exit: 0
+  stdout: |
+    a.txt
+    dir1
+    dir2
+    z.txt

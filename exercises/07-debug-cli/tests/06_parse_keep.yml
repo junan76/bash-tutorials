@@ -1,0 +1,11 @@
+name: parse_args --keep=N
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/cli.sh"
+  parse_args --keep=14
+expect:
+  exit: 0
+  stdout: |
+    DEBUG=0
+    KEEP=14
+    POS=

@@ -1,0 +1,19 @@
+name: parse_args 未知 long option → rc=2 + stderr
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/cli.sh"
+  if parse_args --foo 2>err.log; then
+    echo "unexpected-success"
+  else
+    rc=$?
+    if (( rc == 2 )) && grep -q 'unknown option' err.log; then
+      echo "unknown-option-ok"
+    else
+      echo "rc=$rc"
+      cat err.log
+    fi
+  fi
+expect:
+  exit: 0
+  stdout: |
+    unknown-option-ok

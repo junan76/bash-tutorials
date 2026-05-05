@@ -1,6 +1,0 @@
-name: 无参数时打印 Usage 并以非零退出
-points: 2
-run: bash "$EXERCISE_DIR/starter/rename.sh"
-expect:
-  exit: 1
-  stderr_contains: "Usage"

@@ -1,0 +1,32 @@
+name: manifest_hash_file 对不存在文件返回 1（含正例对照）
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/manifest.sh"
+
+  # 正例：存在文件应当成功
+  printf 'x\n' > present.txt
+  if out=$(manifest_hash_file present.txt 2>/dev/null); then
+    if [[ "$out" =~ ^[0-9a-f]{64}$ ]]; then
+      echo "positive-ok"
+    else
+      echo "positive-bad-output: $out"
+    fi
+  else
+    echo "positive-rc-nonzero"
+  fi
+
+  # 反例：不存在文件应当 return 1 且 stdout 为空
+  if out=$(manifest_hash_file /no/such/file 2>/dev/null); then
+    echo "negative-rc-zero"
+  else
+    if [[ -z "$out" ]]; then
+      echo "negative-ok"
+    else
+      echo "negative-stdout-leaked: $out"
+    fi
+  fi
+expect:
+  exit: 0
+  stdout: |
+    positive-ok
+    negative-ok

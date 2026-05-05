@@ -1,0 +1,15 @@
+name: manifest_diff 两份相同 manifest 输出为空且 rc=0
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/diff.sh"
+  printf '%s\n' $'a.txt\t6\tHASHA' $'b.txt\t5\tHASHB' > m1.txt
+  cp m1.txt m2.txt
+  out=$(manifest_diff m1.txt m2.txt)
+  rc=$?
+  if [[ -z $out ]]; then echo "empty"; else echo "leaked: $out"; fi
+  echo "rc=$rc"
+expect:
+  exit: 0
+  stdout: |
+    empty
+    rc=0

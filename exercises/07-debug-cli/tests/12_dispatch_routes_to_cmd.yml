@@ -1,0 +1,10 @@
+name: dispatch 调用已注册的 cmd_<name> 并透传参数
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/cli.sh"
+  cmd_run() { echo "cmd_run got: $*"; }
+  dispatch run photos --jobs=2
+expect:
+  exit: 0
+  stdout: |
+    cmd_run got: photos --jobs=2

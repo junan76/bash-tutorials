@@ -1,0 +1,14 @@
+name: scan_files 列出标准目录树下的所有文件
+points: 2
+setup: |
+  mkdir -p src/a src/b/c
+  touch src/x.txt src/a/y.txt src/b/c/z.md
+run: |
+  source "$EXERCISE_DIR/starter/lib/scan.sh"
+  scan_files src
+expect:
+  exit: 0
+  stdout: |
+    a/y.txt
+    b/c/z.md
+    x.txt

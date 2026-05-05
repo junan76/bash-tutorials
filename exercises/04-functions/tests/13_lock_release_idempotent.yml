@@ -1,0 +1,15 @@
+name: lock_release 对不存在的锁文件保持幂等
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/lock.sh"
+
+  # 文件本来就不存在，调用应当成功（rc=0），不报错
+  if lock_release no_such.lock; then
+    echo "ok"
+  else
+    echo "rc-nonzero"
+  fi
+expect:
+  exit: 0
+  stdout: |
+    ok

@@ -1,0 +1,16 @@
+name: manifest_build 的 size 列与文件实际字节数一致
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/manifest.sh"
+  mkdir data
+  # 12 字节、3 字节、零字节三种情况
+  printf 'twelve-bytes' > data/a.bin   # 12 bytes
+  printf 'abc'          > data/b.bin   #  3 bytes
+  : > data/empty.bin                   #  0 bytes
+  printf '%s\n' a.bin b.bin empty.bin | manifest_build data | cut -f2
+expect:
+  exit: 0
+  stdout: |
+    12
+    3
+    0

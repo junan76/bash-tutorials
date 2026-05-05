@@ -1,0 +1,14 @@
+name: scan_files 输出按字典序
+points: 1
+setup: |
+  mkdir src
+  touch src/zebra src/apple src/mango
+run: |
+  source "$EXERCISE_DIR/starter/lib/scan.sh"
+  scan_files src
+expect:
+  exit: 0
+  stdout: |
+    apple
+    mango
+    zebra

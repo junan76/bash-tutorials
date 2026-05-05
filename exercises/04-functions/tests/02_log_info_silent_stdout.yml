@@ -1,0 +1,9 @@
+name: log_info 不污染 stdout
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/log.sh"
+  log_set_level info
+  log_info "should go to stderr only"
+expect:
+  exit: 0
+  stdout: ""

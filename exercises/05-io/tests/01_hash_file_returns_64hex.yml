@@ -1,0 +1,10 @@
+name: manifest_hash_file 输出 64 字符 hex
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/manifest.sh"
+  printf 'hello\n' > sample.txt
+  out=$(manifest_hash_file sample.txt)
+  echo "$out"
+expect:
+  exit: 0
+  stdout_matches: "^[0-9a-f]{64}$"

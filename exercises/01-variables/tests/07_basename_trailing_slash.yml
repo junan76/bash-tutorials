@@ -1,0 +1,8 @@
+name: path_basename 处理尾部斜线
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/path.sh"
+  path_basename "/a/b/"
+expect:
+  exit: 0
+  stdout: "b"

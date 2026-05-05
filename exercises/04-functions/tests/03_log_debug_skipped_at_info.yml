@@ -1,0 +1,11 @@
+name: log_debug 在 info 级别下静默且 log_info 仍工作（含正例对照）
+points: 2
+run: |
+  exec 2>&1
+  source "$EXERCISE_DIR/starter/lib/log.sh"
+  log_set_level info
+  log_debug "should-not-appear"
+  log_info "should-appear"
+expect:
+  exit: 0
+  stdout: "[INFO] should-appear"

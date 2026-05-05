@@ -1,0 +1,8 @@
+name: path_dirname 标准用法
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/path.sh"
+  path_dirname "/a/b/c.txt"
+expect:
+  exit: 0
+  stdout: "/a/b"

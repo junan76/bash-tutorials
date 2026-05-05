@@ -1,0 +1,22 @@
+name: manifest_diff 综合场景，输出按路径字典序排序
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/diff.sh"
+  # 故意把输入打乱顺序，验证输出仍按 path 排序
+  printf '%s\n' \
+    $'zebra.txt\t10\tHZ' \
+    $'alpha.txt\t6\tHA-OLD' \
+    $'mango.txt\t5\tHM-OLD' \
+    $'beta.txt\t8\tHB' > old.m
+  printf '%s\n' \
+    $'mango.txt\t5\tHM-NEW' \
+    $'alpha.txt\t6\tHA-OLD' \
+    $'cherry.txt\t9\tHC' \
+    $'beta.txt\t8\tHB' > new.m
+  manifest_diff old.m new.m
+expect:
+  exit: 0
+  stdout: |
+    + cherry.txt
+    M mango.txt
+    - zebra.txt

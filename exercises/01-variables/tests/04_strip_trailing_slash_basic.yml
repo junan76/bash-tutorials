@@ -1,0 +1,8 @@
+name: path_strip_trailing_slash 去掉单/多个尾部斜线
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/path.sh"
+  path_strip_trailing_slash "/foo/bar//"
+expect:
+  exit: 0
+  stdout: "/foo/bar"

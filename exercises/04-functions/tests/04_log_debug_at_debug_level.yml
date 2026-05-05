@@ -1,0 +1,9 @@
+name: log_debug 在 debug 级别下打印
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/log.sh"
+  log_set_level debug
+  log_debug "deep dive"
+expect:
+  exit: 0
+  stderr_contains: "[DEBUG] deep dive"

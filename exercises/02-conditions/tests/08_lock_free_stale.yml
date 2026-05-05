@@ -1,0 +1,10 @@
+name: check_lock_free 接受 PID 已退出的 stale 锁
+points: 2
+setup: |
+  echo "2147483647" > job.lock
+run: |
+  source "$EXERCISE_DIR/starter/lib/check.sh"
+  check_lock_free job.lock
+expect:
+  exit: 0
+  stdout: ""

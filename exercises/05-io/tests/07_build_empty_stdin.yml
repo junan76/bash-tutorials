@@ -1,0 +1,17 @@
+name: manifest_build 空输入产生空输出且 rc=0
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/manifest.sh"
+  mkdir data
+  out=$(printf '' | manifest_build data)
+  echo "rc=$?"
+  if [[ -z "$out" ]]; then
+    echo "empty-out"
+  else
+    echo "leaked: $out"
+  fi
+expect:
+  exit: 0
+  stdout: |
+    rc=0
+    empty-out

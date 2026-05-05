@@ -1,0 +1,11 @@
+name: scan_files 处理深层嵌套（globstar）
+points: 1
+setup: |
+  mkdir -p src/a/b/c/d
+  touch src/a/b/c/d/deep.txt
+run: |
+  source "$EXERCISE_DIR/starter/lib/scan.sh"
+  scan_files src
+expect:
+  exit: 0
+  stdout: "a/b/c/d/deep.txt"

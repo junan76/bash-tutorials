@@ -1,0 +1,8 @@
+name: path_strip_trailing_slash 根目录 / 保留
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/path.sh"
+  path_strip_trailing_slash "/"
+expect:
+  exit: 0
+  stdout: "/"

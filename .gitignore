@@ -5,3 +5,9 @@ __pycache__/
 .vscode/
 *.swp
 *.swo
+
+# Python venv
+.venv/
+
+# mkdocs build output
+site/

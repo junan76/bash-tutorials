@@ -1,0 +1,17 @@
+name: lock_release 删除锁文件
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/lock.sh"
+
+  echo "$$" > job.lock
+  lock_release job.lock
+
+  if [[ -e job.lock ]]; then
+    echo "still-there"
+  else
+    echo "gone"
+  fi
+expect:
+  exit: 0
+  stdout: |
+    gone

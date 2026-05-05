@@ -1,0 +1,22 @@
+name: manifest_verify 全部一致时 stdout 空、rc=0
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/manifest.sh"
+  mkdir data
+  printf 'alpha\n' > data/x.txt
+  printf 'beta\n'  > data/y.txt
+  printf '%s\n' x.txt y.txt | manifest_build data > manifest.txt
+  exec 2>&1   # 把可能的 stderr 也并进 stdout，捕获任何泄漏
+  out=$(manifest_verify manifest.txt data)
+  rc=$?
+  if [[ -z "$out" ]]; then
+    echo "no-output"
+  else
+    echo "leaked: $out"
+  fi
+  echo "rc=$rc"
+expect:
+  exit: 0
+  stdout: |
+    no-output
+    rc=0

@@ -1,0 +1,10 @@
+name: check_source_dir 拒绝普通文件
+points: 1
+setup: |
+  touch notes.txt
+run: |
+  source "$EXERCISE_DIR/starter/lib/check.sh"
+  check_source_dir notes.txt
+expect:
+  exit: 1
+  stderr_contains: "不是目录"

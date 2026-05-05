@@ -1,0 +1,15 @@
+name: enable_debug 后续命令带 [...] 标记的 trace
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/cli.sh"
+  ( enable_debug; echo MARKER ) 2> stderr.log >/dev/null
+  if grep -E '^\+ \[[^]]+\] echo MARKER$' stderr.log >/dev/null; then
+    echo "trace-format-ok"
+  else
+    echo "trace-format-bad"
+    head -5 stderr.log
+  fi
+expect:
+  exit: 0
+  stdout: |
+    trace-format-ok

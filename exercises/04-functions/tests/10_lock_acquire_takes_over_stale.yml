@@ -1,0 +1,26 @@
+name: lock_acquire 接管 stale 锁并写入当前 PID
+points: 1
+run: |
+  source "$EXERCISE_DIR/../02-conditions/solution/lib/check.sh"
+  source "$EXERCISE_DIR/starter/lib/lock.sh"
+
+  # 写一个不存在的进程 PID，模拟"上次崩溃后没清理的尸锁"
+  echo "2147483647" > job.lock
+
+  if lock_acquire job.lock; then
+    echo "took-over"
+  else
+    echo "wrong-rejected"
+  fi
+
+  pid=$(<job.lock)
+  if [[ "$pid" == "$$" ]]; then
+    echo "pid-rewritten"
+  else
+    echo "pid-wrong: $pid"
+  fi
+expect:
+  exit: 0
+  stdout: |
+    took-over
+    pid-rewritten

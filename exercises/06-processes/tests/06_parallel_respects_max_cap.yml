@@ -1,0 +1,47 @@
+name: parallel_run 严格遵守 max_jobs 上限
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/parallel.sh"
+
+  # 每个 job：原子地把 in-flight 计数加 1，记录峰值，sleep 一会儿，再减 1
+  cat > job.sh <<'EOF'
+  #!/usr/bin/env bash
+  counter=$1
+  peak=$2
+  (
+    flock 9
+    cur=$(<"$counter")
+    cur=$((cur + 1))
+    echo "$cur" > "$counter"
+    if (( cur > $(<"$peak") )); then
+      echo "$cur" > "$peak"
+    fi
+  ) 9>"$counter.lock"
+  sleep 0.2
+  (
+    flock 9
+    cur=$(<"$counter")
+    cur=$((cur - 1))
+    echo "$cur" > "$counter"
+  ) 9>"$counter.lock"
+  EOF
+  chmod +x job.sh
+
+  echo 0 > counter
+  echo 0 > peak
+
+  # 6 个 job、max=2；峰值绝不应超过 2
+  for i in 1 2 3 4 5 6; do
+    printf '%s\tbash %s/job.sh counter peak\n' "$i" "$PWD"
+  done | parallel_run 2 > /dev/null
+
+  peak=$(<peak)
+  if (( peak <= 2 && peak >= 1 )); then
+    echo "peak-ok: $peak"
+  else
+    echo "peak-bad: $peak"
+  fi
+expect:
+  exit: 0
+  stdout: |
+    peak-ok: 2

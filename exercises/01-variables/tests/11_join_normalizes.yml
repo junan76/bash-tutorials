@@ -1,0 +1,8 @@
+name: path_join 规范化中间多余的斜线
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/path.sh"
+  path_join "/a/" "/b/" "/c"
+expect:
+  exit: 0
+  stdout: "/a/b/c"

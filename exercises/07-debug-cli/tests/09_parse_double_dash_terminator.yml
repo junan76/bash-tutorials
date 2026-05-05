@@ -1,0 +1,10 @@
+name: parse_args -- 之后字面保留所有 token
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/cli.sh"
+  parse_args --debug -- --jobs=4 photos
+expect:
+  exit: 0
+  stdout: |
+    DEBUG=1
+    POS=--jobs=4 photos

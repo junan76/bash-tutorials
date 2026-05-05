@@ -1,0 +1,9 @@
+name: check_lock_free 拒绝仍在运行的 PID
+points: 3
+run: |
+  source "$EXERCISE_DIR/starter/lib/check.sh"
+  echo "$$" > job.lock
+  check_lock_free job.lock
+expect:
+  exit: 1
+  stderr_contains: "正在运行"

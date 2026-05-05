@@ -1,0 +1,10 @@
+name: check_lock_free 拒绝内容非法的锁文件
+points: 1
+setup: |
+  echo "garbage-not-a-pid" > job.lock
+run: |
+  source "$EXERCISE_DIR/starter/lib/check.sh"
+  check_lock_free job.lock
+expect:
+  exit: 1
+  stderr_contains: "PID"

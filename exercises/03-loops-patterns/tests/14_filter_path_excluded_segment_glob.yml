@@ -1,0 +1,7 @@
+name: filter_path_excluded 段级 glob 匹配 (*.log)
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/filter.sh"
+  filter_path_excluded "logs/2026/run.log" "*.log"
+expect:
+  exit: 0

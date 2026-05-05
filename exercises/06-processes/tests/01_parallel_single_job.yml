@@ -1,0 +1,9 @@
+name: parallel_run 单个 job 正常报告 rc=0
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/parallel.sh"
+  printf '%s\n' $'one\ttrue' | parallel_run 1
+expect:
+  exit: 0
+  stdout: |
+    one	0

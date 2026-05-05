@@ -1,0 +1,8 @@
+name: check_positive_int 拒绝非数字
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/check.sh"
+  check_positive_int abc default_keep
+expect:
+  exit: 1
+  stderr_contains: "default_keep"

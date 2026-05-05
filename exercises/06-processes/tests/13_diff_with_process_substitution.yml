@@ -1,0 +1,14 @@
+name: manifest_diff 与进程替换组合工作
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/diff.sh"
+
+  # 不写中间文件——直接把命令输出通过 process substitution 喂给 manifest_diff
+  manifest_diff \
+    <(printf '%s\n' $'a.txt\t6\tHA' $'b.txt\t5\tHB-OLD') \
+    <(printf '%s\n' $'a.txt\t6\tHA' $'b.txt\t5\tHB-NEW' $'c.txt\t7\tHC')
+expect:
+  exit: 0
+  stdout: |
+    M b.txt
+    + c.txt

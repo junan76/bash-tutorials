@@ -1,0 +1,10 @@
+name: check_source_dir 接受存在且可读的目录
+points: 2
+setup: |
+  mkdir mysrc
+run: |
+  source "$EXERCISE_DIR/starter/lib/check.sh"
+  check_source_dir mysrc
+expect:
+  exit: 0
+  stdout: ""

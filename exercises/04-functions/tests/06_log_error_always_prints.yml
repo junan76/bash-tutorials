@@ -1,0 +1,9 @@
+name: log_error 在 error 级别下仍打印
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/log.sh"
+  log_set_level error
+  log_error "boom"
+expect:
+  exit: 0
+  stderr_contains: "[ERROR] boom"

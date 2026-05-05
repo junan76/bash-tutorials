@@ -1,0 +1,39 @@
+name: parallel_run 并发上限提高时墙钟显著缩短
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/parallel.sh"
+
+  # 三个各 sleep 0.5s 的 job
+  jobs() {
+    printf '%s\n' \
+      $'a\tsleep 0.5' \
+      $'b\tsleep 0.5' \
+      $'c\tsleep 0.5'
+  }
+
+  # max=1 → 串行 ≈ 1.5s
+  start=$(date +%s%N)
+  jobs | parallel_run 1 > /dev/null
+  serial_ms=$(( ($(date +%s%N) - start) / 1000000 ))
+
+  # max=3 → 并行 ≈ 0.5s
+  start=$(date +%s%N)
+  jobs | parallel_run 3 > /dev/null
+  parallel_ms=$(( ($(date +%s%N) - start) / 1000000 ))
+
+  # 并行版本必须明显快——给宽裕余量
+  if (( parallel_ms < 900 )); then
+    echo "parallel-fast"
+  else
+    echo "parallel-slow: ${parallel_ms}ms"
+  fi
+  if (( serial_ms > 1300 )); then
+    echo "serial-slow"
+  else
+    echo "serial-fast: ${serial_ms}ms"
+  fi
+expect:
+  exit: 0
+  stdout: |
+    parallel-fast
+    serial-slow

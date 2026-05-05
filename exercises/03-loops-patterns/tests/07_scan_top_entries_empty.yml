@@ -1,0 +1,10 @@
+name: scan_top_entries 空目录返回空（nullglob 关键）
+points: 1
+setup: |
+  mkdir empty
+run: |
+  source "$EXERCISE_DIR/starter/lib/scan.sh"
+  scan_top_entries empty
+expect:
+  exit: 0
+  stdout: ""

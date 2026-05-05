@@ -1,0 +1,9 @@
+name: manifest_hash_file 计算结果与 sha256sum 一致
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/manifest.sh"
+  printf 'hello\n' > sample.txt
+  manifest_hash_file sample.txt
+expect:
+  exit: 0
+  stdout: "5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03\n"

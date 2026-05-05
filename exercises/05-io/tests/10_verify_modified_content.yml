@@ -1,0 +1,25 @@
+name: manifest_verify 检测到内容被改后输出 MISMATCH 且 rc!=0
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/manifest.sh"
+  mkdir data
+  printf 'alpha\n' > data/x.txt
+  printf 'beta\n'  > data/y.txt
+  printf '%s\n' x.txt y.txt | manifest_build data > manifest.txt
+
+  # 改动 x.txt
+  printf 'tampered\n' > data/x.txt
+
+  out=$(manifest_verify manifest.txt data)
+  rc=$?
+  echo "$out"
+  if (( rc != 0 )); then
+    echo "rc-nonzero"
+  else
+    echo "wrong-rc-zero"
+  fi
+expect:
+  exit: 0
+  stdout: |
+    MISMATCH x.txt
+    rc-nonzero

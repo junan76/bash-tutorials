@@ -1,0 +1,11 @@
+name: parse_args --jobs N 空格形式
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/cli.sh"
+  parse_args --jobs 4
+expect:
+  exit: 0
+  stdout: |
+    DEBUG=0
+    JOBS=4
+    POS=

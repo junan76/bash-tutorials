@@ -1,0 +1,12 @@
+name: manifest_diff 只检测到新增文件
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/diff.sh"
+  printf '%s\n' $'a.txt\t6\tHA' > old.m
+  printf '%s\n' $'a.txt\t6\tHA' $'b.txt\t5\tHB' $'c.txt\t7\tHC' > new.m
+  manifest_diff old.m new.m
+expect:
+  exit: 0
+  stdout: |
+    + b.txt
+    + c.txt

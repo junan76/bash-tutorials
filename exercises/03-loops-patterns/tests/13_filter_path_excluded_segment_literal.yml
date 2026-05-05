@@ -1,0 +1,7 @@
+name: filter_path_excluded 任一段字面匹配 (.git)
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/filter.sh"
+  filter_path_excluded "src/.git/HEAD" ".git"
+expect:
+  exit: 0

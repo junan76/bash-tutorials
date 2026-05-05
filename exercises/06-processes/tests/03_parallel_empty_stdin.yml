@@ -1,0 +1,17 @@
+name: parallel_run 空 stdin 输出空、rc=0
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/parallel.sh"
+  out=$(printf '' | parallel_run 4)
+  rc=$?
+  if [[ -z $out ]]; then
+    echo "empty"
+  else
+    echo "leaked: $out"
+  fi
+  echo "rc=$rc"
+expect:
+  exit: 0
+  stdout: |
+    empty
+    rc=0

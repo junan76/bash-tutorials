@@ -1,0 +1,11 @@
+name: manifest_diff 只检测到 hash 变化
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/diff.sh"
+  printf '%s\n' $'a.txt\t6\tHA-OLD' $'b.txt\t5\tHB-OLD' > old.m
+  printf '%s\n' $'a.txt\t6\tHA-NEW' $'b.txt\t5\tHB-OLD' > new.m
+  manifest_diff old.m new.m
+expect:
+  exit: 0
+  stdout: |
+    M a.txt

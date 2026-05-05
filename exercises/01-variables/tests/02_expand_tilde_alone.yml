@@ -1,0 +1,9 @@
+name: path_expand_tilde 单独的 ~ 展开为 $HOME
+points: 2
+run: |
+  export HOME=/tmp/fake-home
+  source "$EXERCISE_DIR/starter/lib/path.sh"
+  path_expand_tilde "~"
+expect:
+  exit: 0
+  stdout: "/tmp/fake-home"

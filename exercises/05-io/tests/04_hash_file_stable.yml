@@ -1,0 +1,16 @@
+name: manifest_hash_file 同一文件得到相同 hash
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/manifest.sh"
+  printf 'gamma\n' > sample.txt
+  h1=$(manifest_hash_file sample.txt)
+  h2=$(manifest_hash_file sample.txt)
+  if [[ "$h1" == "$h2" && -n "$h1" ]]; then
+    echo "stable"
+  else
+    echo "drift: $h1 vs $h2"
+  fi
+expect:
+  exit: 0
+  stdout: |
+    stable

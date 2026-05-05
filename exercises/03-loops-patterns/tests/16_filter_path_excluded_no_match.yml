@@ -1,0 +1,11 @@
+name: filter_path_excluded 区分命中与不命中（含正例对照）
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/filter.sh"
+  filter_path_excluded "src/.git/HEAD" ".git"                         && echo positive-ok
+  filter_path_excluded "src/main.c"   "*.tmp" ".git" "node_modules"   || echo negative-ok
+expect:
+  exit: 0
+  stdout: |
+    positive-ok
+    negative-ok

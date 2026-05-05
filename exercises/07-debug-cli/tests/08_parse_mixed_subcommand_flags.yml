@@ -1,0 +1,11 @@
+name: parse_args 子命令与选项混用，POS 保持出现顺序
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/cli.sh"
+  parse_args run --jobs=2 --debug photos
+expect:
+  exit: 0
+  stdout: |
+    DEBUG=1
+    JOBS=2
+    POS=run photos

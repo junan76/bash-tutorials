@@ -1,0 +1,8 @@
+name: check_job_name 拒绝保留字 latest
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/check.sh"
+  check_job_name latest
+expect:
+  exit: 1
+  stderr_contains: "保留字"

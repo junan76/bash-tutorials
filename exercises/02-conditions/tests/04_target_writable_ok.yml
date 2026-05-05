@@ -1,0 +1,10 @@
+name: check_target_writable 接受可写目录
+points: 2
+setup: |
+  mkdir backups
+run: |
+  source "$EXERCISE_DIR/starter/lib/check.sh"
+  check_target_writable backups
+expect:
+  exit: 0
+  stdout: ""

@@ -1,0 +1,36 @@
+name: trap 在子 shell 退出时自动释放锁
+points: 3
+run: |
+  # 在一个独立的 bash 子进程里 acquire 锁，让它自然退出，验证 EXIT trap
+  # 触发了 lock_release。子进程在持锁期间 touch 一个 sentinel，让外层
+  # 能确认它确实拿到过锁——避免"它根本没成功 acquire 也能让锁文件不存在"
+  # 这种伪通过。
+  bash -c '
+    source "$EXERCISE_DIR/../02-conditions/solution/lib/check.sh"
+    source "$EXERCISE_DIR/starter/lib/lock.sh"
+    lock_acquire job.lock || exit 9
+    # 标记：在持锁期间锁文件确实存在
+    if [[ -f job.lock ]]; then
+      touch held.sentinel
+    fi
+  '
+  rc=$?
+  echo "subshell-rc=$rc"
+
+  if [[ -f held.sentinel ]]; then
+    echo "was-held"
+  else
+    echo "never-held"
+  fi
+
+  if [[ -e job.lock ]]; then
+    echo "lock-still-there"
+  else
+    echo "lock-released"
+  fi
+expect:
+  exit: 0
+  stdout: |
+    subshell-rc=0
+    was-held
+    lock-released

@@ -1,0 +1,28 @@
+name: parallel_run 跑完所有 job 而不是只跑前 max 个
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/parallel.sh"
+
+  # 5 个 job、并发 2，每个 job touch 一个 sentinel；最终 5 个 sentinel 都应存在
+  printf '%s\n' \
+    $'a\ttouch a.done' \
+    $'b\ttouch b.done' \
+    $'c\ttouch c.done' \
+    $'d\ttouch d.done' \
+    $'e\ttouch e.done' \
+    | parallel_run 2 | cut -f1 | sort
+
+  ls *.done | sort
+expect:
+  exit: 0
+  stdout: |
+    a
+    b
+    c
+    d
+    e
+    a.done
+    b.done
+    c.done
+    d.done
+    e.done

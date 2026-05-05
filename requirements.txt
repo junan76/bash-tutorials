@@ -1,0 +1,5 @@
+pyyaml>=5.0
+
+mkdocs>=1.5
+mkdocs-material>=9.5
+mkdocs-include-markdown-plugin>=6.0

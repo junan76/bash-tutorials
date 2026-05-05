@@ -1,0 +1,8 @@
+name: check_lock_free 锁文件不存在视为空闲
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/check.sh"
+  check_lock_free job.lock
+expect:
+  exit: 0
+  stdout: ""

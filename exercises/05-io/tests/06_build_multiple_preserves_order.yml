@@ -1,0 +1,16 @@
+name: manifest_build 多文件按 stdin 顺序输出
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/manifest.sh"
+  mkdir data
+  printf 'alpha\n' > data/x.txt
+  printf 'beta\n'  > data/y.txt
+  printf 'gamma\n' > data/z.txt
+  # 注意：故意倒序输入，验证 build 不会自己排序
+  printf '%s\n' z.txt y.txt x.txt | manifest_build data | cut -f1
+expect:
+  exit: 0
+  stdout: |
+    z.txt
+    y.txt
+    x.txt

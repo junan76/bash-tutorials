@@ -1,0 +1,10 @@
+name: parse_args 仅位置参数 → POS 收集所有
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/cli.sh"
+  parse_args run photos
+expect:
+  exit: 0
+  stdout: |
+    DEBUG=0
+    POS=run photos

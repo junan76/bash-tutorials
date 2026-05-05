@@ -1,0 +1,8 @@
+name: derive_snapshot_name 把冒号替换为短横
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/path.sh"
+  derive_snapshot_name "2026-05-04T10:00:00"
+expect:
+  exit: 0
+  stdout: "2026-05-04T10-00-00"

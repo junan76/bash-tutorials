@@ -1,0 +1,10 @@
+name: scan_files 空目录输出空（nullglob 关键）
+points: 1
+setup: |
+  mkdir empty
+run: |
+  source "$EXERCISE_DIR/starter/lib/scan.sh"
+  scan_files empty
+expect:
+  exit: 0
+  stdout: ""

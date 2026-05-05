@@ -1,0 +1,8 @@
+name: path_expand_tilde 不动非 ~ 开头的路径
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/path.sh"
+  path_expand_tilde "/abs/path"
+expect:
+  exit: 0
+  stdout: "/abs/path"

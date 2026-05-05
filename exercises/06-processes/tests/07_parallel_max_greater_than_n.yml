@@ -1,0 +1,10 @@
+name: parallel_run 当 max 大于 job 数时也能正确收尾
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/parallel.sh"
+  printf '%s\n' $'a\ttrue' $'b\ttrue' | parallel_run 10 | cut -f1 | sort
+expect:
+  exit: 0
+  stdout: |
+    a
+    b

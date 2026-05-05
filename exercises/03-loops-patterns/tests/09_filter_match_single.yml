@@ -1,0 +1,7 @@
+name: filter_match 单 pattern 匹配
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/filter.sh"
+  filter_match "foo.tmp" "*.tmp"
+expect:
+  exit: 0

@@ -1,0 +1,22 @@
+name: manifest_verify 同时报告多种问题（顺序与 manifest 一致）
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/manifest.sh"
+  mkdir data
+  printf 'alpha\n' > data/x.txt
+  printf 'beta\n'  > data/y.txt
+  printf 'gamma\n' > data/z.txt
+  printf '%s\n' x.txt y.txt z.txt | manifest_build data > manifest.txt
+
+  printf 'tampered\n' > data/x.txt   # MISMATCH
+  rm -f data/y.txt                   # MISSING
+  # z.txt 不动                        # 应当不出现在输出里
+
+  manifest_verify manifest.txt data
+  echo "rc=$?"
+expect:
+  exit: 0
+  stdout: |
+    MISMATCH x.txt
+    MISSING y.txt
+    rc=1

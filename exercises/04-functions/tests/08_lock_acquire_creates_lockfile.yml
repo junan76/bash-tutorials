@@ -1,0 +1,22 @@
+name: lock_acquire 创建含本进程 PID 的锁文件
+points: 3
+run: |
+  source "$EXERCISE_DIR/../02-conditions/solution/lib/check.sh"
+  source "$EXERCISE_DIR/starter/lib/lock.sh"
+  lock_acquire job.lock
+  if [[ -f job.lock ]]; then
+    echo "exists"
+    pid=$(<job.lock)
+    if [[ "$pid" == "$$" ]]; then
+      echo "pid-correct"
+    else
+      echo "pid-wrong: $pid"
+    fi
+  else
+    echo "missing"
+  fi
+expect:
+  exit: 0
+  stdout: |
+    exists
+    pid-correct

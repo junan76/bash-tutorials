@@ -1,0 +1,8 @@
+name: check_job_name 拒绝含路径分隔符
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/check.sh"
+  check_job_name "a/b"
+expect:
+  exit: 1
+  stderr_contains: "a-zA-Z0-9"

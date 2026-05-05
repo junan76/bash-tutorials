@@ -1,0 +1,10 @@
+name: manifest_build 输出单文件 `<path>\t<size>\t<hash>` 格式
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/manifest.sh"
+  mkdir data
+  printf 'hello\n' > data/a.txt
+  printf '%s\n' a.txt | manifest_build data
+expect:
+  exit: 0
+  stdout: "a.txt\t6\t5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03\n"

@@ -1,0 +1,62 @@
+site_name: Bash 脚本编程：交互式课程
+site_description: 为已有命令行基础的学习者设计的 bash 脚本课程
+docs_dir: docs
+
+theme:
+  name: material
+  language: zh
+  features:
+    - content.code.copy
+    - content.code.annotate
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: 切换到深色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: 切换到浅色模式
+
+plugins:
+  - search
+  - include-markdown
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - toc:
+      permalink: true
+      permalink_title: 锚点链接
+
+nav:
+  - 首页: index.md
+  - Capstone 项目 (bkp): capstone.md
+  - 章节:
+      - 1. 变量、引用、参数展开: chapters/01-variables.md
+      - 2. 条件、test、布尔逻辑: chapters/02-conditions.md
+      - 3. 循环、数组、模式匹配: chapters/03-loops-patterns.md
+      - 4. 函数、作用域、库复用: chapters/04-functions.md
+      - 5. I/O 重定向、管道、文件描述符: chapters/05-io.md
+      - 6. 进程、并发、进程替换: chapters/06-processes.md
+      - 7. 调试与命令行参数解析: chapters/07-debug-cli.md
+      # 8. 综合：健壮性收尾与集成: chapters/08-capstone.md
+  - 附录:
+      - 评分规约: appendix/grader-spec.md
+      - 评分器路线图: appendix/grader-roadmap.md

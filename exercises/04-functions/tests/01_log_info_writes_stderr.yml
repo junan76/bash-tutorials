@@ -1,0 +1,9 @@
+name: log_info 写 stderr 且含 [INFO] 前缀
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/log.sh"
+  log_set_level info
+  log_info "hello world"
+expect:
+  exit: 0
+  stderr_contains: "[INFO] hello world"

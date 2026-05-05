@@ -1,0 +1,18 @@
+name: 在 set -euo pipefail 下端到端流程仍正确
+points: 1
+run: |
+  set -euo pipefail
+  source "$EXERCISE_DIR/starter/lib/manifest.sh"
+
+  mkdir data
+  printf 'alpha\n' > data/x.txt
+  printf 'beta\n'  > data/y.txt
+
+  # build → verify 全链路必须能在 pipefail 下跑通
+  printf '%s\n' x.txt y.txt | manifest_build data > manifest.txt
+  manifest_verify manifest.txt data
+  echo "ok"
+expect:
+  exit: 0
+  stdout: |
+    ok
