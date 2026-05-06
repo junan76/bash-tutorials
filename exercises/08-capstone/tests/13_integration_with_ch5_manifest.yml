@@ -1,0 +1,49 @@
+name: 集成 —— restore 后用 ch5 manifest_verify 校验，prune 后剩余快照仍可校验
+points: 3
+run: |
+  source "$EXERCISE_DIR/../05-io/solution/lib/manifest.sh"
+  source "$EXERCISE_DIR/starter/lib/maint.sh"
+
+  mkdir snaps
+
+  # 三个时间戳快照，每个里都是相同的两份内容 + 一份 manifest
+  for ts in 2026-01-01 2026-02-01 2026-03-01; do
+    snap="snaps/$ts"
+    mkdir -p "$snap/data"
+    echo "alpha" > "$snap/data/a.txt"
+    echo "beta"  > "$snap/data/b.txt"
+    ( cd "$snap" && printf '%s\n' a.txt b.txt | manifest_build data > manifest.txt )
+  done
+
+  # prune 留 2 个最新
+  prune_snapshots snaps 2
+  remaining=$(ls snaps | sort | xargs)
+  echo "remaining: $remaining"
+
+  # 对剩余每个快照都跑 manifest_verify
+  for snap in snaps/*/; do
+    out=$(manifest_verify "$snap/manifest.txt" "$snap/data" 2>&1)
+    rc=$?
+    if [[ -z "$out" && $rc -eq 0 ]]; then
+      echo "verify-ok: ${snap%/}"
+    else
+      echo "verify-bad: ${snap%/} rc=$rc out=$out"
+    fi
+  done
+
+  # restore 最新快照到工作目录，再校验
+  newest=$(ls snaps | sort | tail -1)
+  restore_snapshot "snaps/$newest/data" workdir
+  echo "restore-rc=$?"
+  out=$(manifest_verify "snaps/$newest/manifest.txt" workdir)
+  echo "post-restore-verify-rc=$?"
+  [[ -z "$out" ]] && echo "post-restore-verify-clean"
+expect:
+  exit: 0
+  stdout: |
+    remaining: 2026-02-01 2026-03-01
+    verify-ok: snaps/2026-02-01
+    verify-ok: snaps/2026-03-01
+    restore-rc=0
+    post-restore-verify-rc=0
+    post-restore-verify-clean

@@ -1,0 +1,24 @@
+name: restore_snapshot 拷贝到全新 dest
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/maint.sh"
+  mkdir src
+  echo "alpha" > src/a.txt
+  echo "beta"  > src/b.txt
+  mkdir -p src/sub
+  echo "gamma" > src/sub/c.txt
+  restore_snapshot src dest
+  rc=$?
+  echo "rc=$rc"
+  ( cd dest && find . -type f | sort )
+  cat dest/a.txt
+  cat dest/sub/c.txt
+expect:
+  exit: 0
+  stdout: |
+    rc=0
+    ./a.txt
+    ./b.txt
+    ./sub/c.txt
+    alpha
+    gamma

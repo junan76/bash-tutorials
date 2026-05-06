@@ -1,0 +1,21 @@
+name: restore_snapshot src 不存在 → rc=1 + stderr
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/maint.sh"
+  restore_snapshot /nonexistent/snap dest 2> stderr.log
+  rc=$?
+  echo "rc=$rc"
+  if grep -q "ERROR" stderr.log; then
+    echo "stderr-has-error"
+  fi
+  if [[ -e dest ]]; then
+    echo "dest-leaked"
+  else
+    echo "no-dest-created"
+  fi
+expect:
+  exit: 0
+  stdout: |
+    rc=1
+    stderr-has-error
+    no-dest-created

@@ -1,0 +1,18 @@
+name: prune_snapshots 缺失目录 → rc=1 + stderr
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/maint.sh"
+  prune_snapshots /nonexistent/path/should/fail 3 2> stderr.log
+  rc=$?
+  echo "rc=$rc"
+  if grep -q "ERROR" stderr.log; then
+    echo "stderr-has-error"
+  else
+    echo "stderr-missing-error"
+    cat stderr.log
+  fi
+expect:
+  exit: 0
+  stdout: |
+    rc=1
+    stderr-has-error

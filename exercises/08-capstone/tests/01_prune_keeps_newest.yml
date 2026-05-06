@@ -1,0 +1,20 @@
+name: prune_snapshots 保留最新的 keep 个
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/maint.sh"
+  mkdir snaps
+  for d in 2026-01-01 2026-02-01 2026-03-01 2026-04-01 2026-05-01; do
+    mkdir "snaps/$d"
+    echo "data" > "snaps/$d/file.txt"
+  done
+  prune_snapshots snaps 3
+  rc=$?
+  echo "rc=$rc"
+  ls snaps | sort
+expect:
+  exit: 0
+  stdout: |
+    rc=0
+    2026-03-01
+    2026-04-01
+    2026-05-01

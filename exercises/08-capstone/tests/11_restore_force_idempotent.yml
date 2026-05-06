@@ -1,0 +1,23 @@
+name: restore_snapshot --force 幂等 —— 连跑两次 dest 一致
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/maint.sh"
+  mkdir src
+  echo "alpha" > src/a.txt
+  echo "beta"  > src/b.txt
+  restore_snapshot src dest --force
+  first=$(cd dest && find . -type f -exec sha256sum {} + | sort)
+  restore_snapshot src dest --force
+  second=$(cd dest && find . -type f -exec sha256sum {} + | sort)
+  if [[ "$first" == "$second" ]]; then
+    echo "idempotent"
+  else
+    echo "DIVERGED"
+  fi
+  ( cd dest && find . -type f | sort )
+expect:
+  exit: 0
+  stdout: |
+    idempotent
+    ./a.txt
+    ./b.txt

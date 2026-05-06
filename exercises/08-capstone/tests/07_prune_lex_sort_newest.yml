@@ -1,0 +1,19 @@
+name: prune_snapshots 按字典序识别"最新"（ISO 时间戳天然时间序）
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/maint.sh"
+  mkdir snaps
+  # 故意打乱创建顺序——靠目录名而不是 mtime 才能正确识别
+  for d in 2026-03-15T12-00-00 2026-01-02T08-30-00 2026-05-01T23-59-59 2026-02-14T10-00-00; do
+    mkdir "snaps/$d"
+    sleep 0.01
+  done
+  # 把"最老"的那个 touch 一下，让它的 mtime 变成最新——
+  # 如果实现错把 mtime 当作排序键，这里就会保留 2026-01-02
+  touch "snaps/2026-01-02T08-30-00"
+  prune_snapshots snaps 1
+  ls snaps
+expect:
+  exit: 0
+  stdout: |
+    2026-05-01T23-59-59

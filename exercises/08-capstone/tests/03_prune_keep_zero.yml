@@ -1,0 +1,22 @@
+name: prune_snapshots keep=0 → 全部清空
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/maint.sh"
+  mkdir snaps
+  for d in 2026-01-01 2026-02-01 2026-03-01; do
+    mkdir "snaps/$d"
+  done
+  prune_snapshots snaps 0
+  rc=$?
+  echo "rc=$rc"
+  remaining=$(ls snaps)
+  if [[ -z "$remaining" ]]; then
+    echo "empty"
+  else
+    echo "leftover: $remaining"
+  fi
+expect:
+  exit: 0
+  stdout: |
+    rc=0
+    empty

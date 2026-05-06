@@ -1,0 +1,26 @@
+name: prune_snapshots 幂等 —— 跑两次结果相同
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/maint.sh"
+  mkdir snaps
+  for d in 2026-01-01 2026-02-01 2026-03-01 2026-04-01; do
+    mkdir "snaps/$d"
+  done
+  prune_snapshots snaps 2
+  first=$(ls snaps | sort)
+  prune_snapshots snaps 2
+  second=$(ls snaps | sort)
+  if [[ "$first" == "$second" ]]; then
+    echo "idempotent"
+    echo "$second"
+  else
+    echo "DIVERGED"
+    echo "first:  $first"
+    echo "second: $second"
+  fi
+expect:
+  exit: 0
+  stdout: |
+    idempotent
+    2026-03-01
+    2026-04-01

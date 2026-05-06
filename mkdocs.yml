@@ -56,7 +56,7 @@ nav:
       - 5. I/O 重定向、管道、文件描述符: chapters/05-io.md
       - 6. 进程、并发、进程替换: chapters/06-processes.md
       - 7. 调试与命令行参数解析: chapters/07-debug-cli.md
-      # 8. 综合：健壮性收尾与集成: chapters/08-capstone.md
+      - 8. 综合：健壮性收尾与集成: chapters/08-capstone.md
   - 附录:
       - 评分规约: appendix/grader-spec.md
       - 评分器路线图: appendix/grader-roadmap.md

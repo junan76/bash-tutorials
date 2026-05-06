@@ -1,0 +1,19 @@
+name: prune_snapshots keep > n 时是 no-op
+points: 1
+run: |
+  source "$EXERCISE_DIR/starter/lib/maint.sh"
+  mkdir snaps
+  for d in 2026-01-01 2026-02-01 2026-03-01; do
+    mkdir "snaps/$d"
+  done
+  prune_snapshots snaps 10
+  rc=$?
+  echo "rc=$rc"
+  ls snaps | sort
+expect:
+  exit: 0
+  stdout: |
+    rc=0
+    2026-01-01
+    2026-02-01
+    2026-03-01

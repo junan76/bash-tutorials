@@ -1,0 +1,25 @@
+name: restore_snapshot dest 非空且无 --force → rc=1 + stderr，且 dest 不变
+points: 2
+run: |
+  source "$EXERCISE_DIR/starter/lib/maint.sh"
+  mkdir src
+  echo "from-src" > src/a.txt
+  mkdir dest
+  echo "preexisting" > dest/keep.txt
+  restore_snapshot src dest 2> stderr.log
+  rc=$?
+  echo "rc=$rc"
+  if grep -q "ERROR" stderr.log; then
+    echo "stderr-has-error"
+  else
+    echo "stderr-missing-error"
+  fi
+  ls dest | sort
+  cat dest/keep.txt
+expect:
+  exit: 0
+  stdout: |
+    rc=1
+    stderr-has-error
+    keep.txt
+    preexisting
