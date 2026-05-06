@@ -268,9 +268,53 @@ make grade
 - ch7 `lib/cli.sh`：CLI 调度与 `--debug`
 - ch8 `lib/maint.sh`：prune 与 restore（**本章**）
 
-把这些模块拼起来就是一份 600–900 行的本地增量备份工具。比"hello world 教程"显然厚一些，比"贡献 systemd"显然薄很多——刚好是 bash 适合的甜蜜点：把单机的、文件系统层面的、运维型的工作流写得稳、写得能复用。
+把这些模块拼起来就是一份本地增量备份工具——参考装配版本在 `exercises/08-capstone/solution/bkp` 里（约 280 行的 dispatcher，加上 8 章的 lib 一共约 950 行）。
 
-接下来想往哪走，几条路：
+### 整合后的 `bkp` 长什么样
+
+```bash
+$ ./bkp init
+$ ./bkp add notes ~/Documents/notes --exclude='*.tmp'
+$ ./bkp run notes
+[INFO] [notes] 扫描 /home/alice/Documents/notes
+[INFO] [notes] 拷贝 142 个文件 → ~/backups/notes/snapshots/2026-05-06T10-09-51
+[INFO] [notes] 写 manifest → ~/backups/notes/manifests/2026-05-06T10-09-51.txt
+[INFO] [notes] 完成: 2026-05-06T10-09-51 (keep=10)
+
+$ ./bkp diff notes
+M docs/draft.md
++ docs/2026-meeting.md
+
+$ BKP_JOBS=4 ./bkp run --all     # 并发跑所有任务
+$ ./bkp restore notes 2026-05-06T10-09-51 /tmp/recovered
+$ ./bkp prune notes --keep=5
+$ ./bkp verify notes
+```
+
+`bkp` 这个文件最值得读的部分是它的开头——**11 行 source**，每一行对应一章的产出：
+
+```bash
+source "$EX_ROOT/01-variables/solution/lib/path.sh"      # ch1
+source "$EX_ROOT/02-conditions/solution/lib/check.sh"    # ch2
+source "$EX_ROOT/03-loops-patterns/solution/lib/scan.sh"   # ch3
+...
+source "$BKP_HOME/lib/maint.sh"                          # ch8
+```
+
+把课从头到尾走一遍的"成果清单"就在这十一行里。
+
+### 这一步暴露了什么 lib API 之外的细节
+
+集成的时候你会发现几处 lib 不直接负责、需要 dispatcher 去缝合的逻辑——这些是**整合层**的工作，不属于任何单章：
+
+1. **配置文件的格式选择**：每个 job 一个 `~/.config/bkp/jobs.d/<name>.conf`，文件本身是可 `source` 的 bash 片段（`src=...`、`excludes=( ... )`、`keep=N`）。这是 bash 工具的常见 idiom——配置即代码，不引入 YAML/TOML 解析器
+2. **`latest` 软链放在 job 根目录而不是 snapshots/ 里**：因为 `prune_snapshots` 是按字典序排的，`latest` 这个名字会排在所有时间戳之后被当成"最新的快照"误删真实数据
+3. **prune 同时要扫 `manifests/`**：lib 函数 `prune_snapshots` 只负责 snapshots/，dispatcher 要加一个 `sweep_orphan_manifests` 把孤儿 manifest 清掉，让两边永远对齐
+4. **`run --all` 的并发**：把每个 job 包装成 `<name>\t<self> run <name>` 的行喂给 `parallel_run`——递归调用自己。这是 bash 里"任务分发"的简洁写法
+
+这四条都是**集成测试才能暴露的问题**。单元测试看不到——因为它们是模块边界之间的事。
+
+## 接下来想往哪走
 
 - **接 cron**：写 systemd timer 或 cron entry 让 `bkp run --all` 每天跑
 - **接通知**：在 `bkp run` 末尾发 desktop notification / 邮件

@@ -1,0 +1,396 @@
+#!/usr/bin/env bash
+#
+# bkp —— 本地增量备份工具（capstone 整合版）
+#
+# 这一份是把 ch1–ch8 各章的模块串起来的入口。每一个 source 行对应一
+# 章的产出：把它们读完一遍，就走完了整门课的轨迹。
+#
+# 用法：
+#   bkp init                              初始化 ~/.config/bkp 与 BKP_ROOT
+#   bkp add <name> <src> [--exclude=PAT]  登记任务（可重复 --exclude）
+#   bkp list                              列出所有任务
+#   bkp run [name]                        跑一个任务（不带名 = 跑全部）
+#   bkp run --all [--jobs=N]              并发跑全部
+#   bkp status [name]                     上次运行时间、快照数
+#   bkp diff <name> [ts1 ts2]             两个快照之间变更（默认最后两个）
+#   bkp restore <name> <ts> <dest> [--force]  把某个快照解到 dest
+#   bkp prune <name> [--keep=N]           按保留策略清理老快照
+#   bkp verify <name> [ts]                用 manifest 校验快照
+#   bkp --debug <subcommand> ...          打开 trace
+#
+# 环境变量：
+#   BKP_CONFIG    任务配置目录    默认 ~/.config/bkp
+#   BKP_ROOT      快照根目录      默认 ~/backups
+#   LOG_LEVEL     日志级别        debug|info|warn|error，默认 info
+
+set -euo pipefail
+shopt -s nullglob
+
+# ---------------------------------------------------------------
+# 各章模块装配（这就是整门课的 import block）
+# ---------------------------------------------------------------
+BKP_HOME=${BASH_SOURCE[0]%/*}
+EX_ROOT=$BKP_HOME/../..
+
+# shellcheck source=/dev/null
+source "$EX_ROOT/01-variables/solution/lib/path.sh"      # ch1
+# shellcheck source=/dev/null
+source "$EX_ROOT/02-conditions/solution/lib/check.sh"    # ch2
+# shellcheck source=/dev/null
+source "$EX_ROOT/03-loops-patterns/solution/lib/scan.sh"   # ch3
+# shellcheck source=/dev/null
+source "$EX_ROOT/03-loops-patterns/solution/lib/filter.sh" # ch3
+# shellcheck source=/dev/null
+source "$EX_ROOT/04-functions/solution/lib/log.sh"       # ch4
+# shellcheck source=/dev/null
+source "$EX_ROOT/04-functions/solution/lib/lock.sh"      # ch4
+# shellcheck source=/dev/null
+source "$EX_ROOT/05-io/solution/lib/manifest.sh"         # ch5
+# shellcheck source=/dev/null
+source "$EX_ROOT/06-processes/solution/lib/parallel.sh"  # ch6
+# shellcheck source=/dev/null
+source "$EX_ROOT/06-processes/solution/lib/diff.sh"      # ch6
+# shellcheck source=/dev/null
+source "$EX_ROOT/07-debug-cli/solution/lib/cli.sh"       # ch7
+# shellcheck source=/dev/null
+source "$BKP_HOME/lib/maint.sh"                          # ch8
+
+# ---------------------------------------------------------------
+# 全局配置（路径与默认值）
+# ---------------------------------------------------------------
+: "${BKP_CONFIG:=$HOME/.config/bkp}"
+: "${BKP_ROOT:=$HOME/backups}"
+
+JOBS_DIR=$BKP_CONFIG/jobs.d
+log_set_level "${LOG_LEVEL:-info}" >/dev/null 2>&1 || true
+
+# ---------------------------------------------------------------
+# 工具函数
+# ---------------------------------------------------------------
+timestamp() {
+    derive_snapshot_name "$(date +%Y-%m-%dT%H:%M:%S)"
+}
+
+job_file() { printf '%s/%s.conf\n' "$JOBS_DIR" "$1"; }
+job_dir()  { printf '%s/%s\n' "$BKP_ROOT" "$1"; }
+
+# 从 ~/.config/bkp/jobs.d/<name>.conf 读出 src / excludes / keep 到调用方变量。
+# 配置文件就是可 source 的 bash 片段：
+#     src=/home/alice/notes
+#     excludes=( "*.tmp" ".git" )
+#     keep=10
+load_job() {
+    local name=$1
+    local file
+    file=$(job_file "$name")
+    if [[ ! -f $file ]]; then
+        log_error "job '$name' 不存在 ($file)"
+        return 1
+    fi
+    src=
+    excludes=()
+    keep=10
+    # shellcheck source=/dev/null
+    source "$file"
+    if [[ -z $src ]]; then
+        log_error "job '$name' 的 src 为空"
+        return 1
+    fi
+    src=$(path_expand_tilde "$src")
+    src=$(path_strip_trailing_slash "$src")
+}
+
+list_snapshots() {
+    local name=$1
+    local snaps_dir=$(job_dir "$name")/snapshots
+    [[ -d $snaps_dir ]] || return 0
+    local d
+    for d in "$snaps_dir"/*/; do
+        # 跳过符号链接（latest 在 job 根目录而不是 snapshots 里，但保留这条防御）
+        [[ -L ${d%/} ]] && continue
+        [[ -d $d ]] || continue
+        printf '%s\n' "$(path_basename "$d")"
+    done | LC_ALL=C sort
+}
+
+# 删除孤儿 manifest——其对应的快照目录已经被 prune 掉的那些。
+# 配合 prune_snapshots 一起跑，让 manifests 与 snapshots 永远对齐。
+sweep_orphan_manifests() {
+    local manifests_dir=$1 snaps_dir=$2
+    local m ts
+    for m in "$manifests_dir"/*.txt; do
+        [[ -f $m ]] || continue
+        ts=$(path_basename "$m"); ts=${ts%.txt}
+        [[ -d "$snaps_dir/$ts" ]] || rm -f "$m"
+    done
+}
+
+# ---------------------------------------------------------------
+# 子命令：cmd_<name>
+# ---------------------------------------------------------------
+
+cmd_init() {
+    mkdir -p "$JOBS_DIR" "$BKP_ROOT"
+    log_info "初始化完成: BKP_CONFIG=$BKP_CONFIG  BKP_ROOT=$BKP_ROOT"
+}
+
+cmd_add() {
+    local name=${1:-} src=${2:-}
+    if [[ -z $name || -z $src ]]; then
+        echo "usage: bkp add <name> <src> [--exclude=PAT ...]" >&2
+        return 2
+    fi
+    check_job_name "$name" || return 1
+    shift 2
+
+    src=$(path_expand_tilde "$src")
+    src=$(path_strip_trailing_slash "$src")
+    check_source_dir "$src" || return 1
+
+    local -a excludes=()
+    local arg
+    for arg in "$@"; do
+        case $arg in
+            --exclude=*) excludes+=("${arg#--exclude=}") ;;
+            *) log_warn "ignored: $arg" ;;
+        esac
+    done
+
+    mkdir -p "$JOBS_DIR"
+    local file
+    file=$(job_file "$name")
+    {
+        printf '# bkp job: %s\n' "$name"
+        printf 'src=%q\n' "$src"
+        printf 'keep=10\n'
+        printf 'excludes=('
+        local pat
+        for pat in "${excludes[@]}"; do
+            printf ' %q' "$pat"
+        done
+        printf ' )\n'
+    } > "$file"
+    log_info "登记任务: $name → $src"
+}
+
+cmd_list() {
+    if [[ ! -d $JOBS_DIR ]]; then
+        log_warn "未初始化，先跑 'bkp init'"
+        return 1
+    fi
+    local f name src
+    for f in "$JOBS_DIR"/*.conf; do
+        name=$(path_basename "$f")
+        name=${name%.conf}
+        src=
+        # shellcheck source=/dev/null
+        ( source "$f"; printf '%-20s %s\n' "$name" "$src" )
+    done
+}
+
+# 单个任务的真实备份逻辑——被 cmd_run 直接调用，也被并发 run --all 调用。
+run_one() {
+    local name=$1
+    local src excludes keep
+    excludes=(); keep=10
+    load_job "$name" || return 1
+
+    check_source_dir "$src" || return 1
+
+    local jdir snaps_dir manifests_dir lockfile
+    jdir=$(job_dir "$name")
+    snaps_dir=$jdir/snapshots
+    manifests_dir=$jdir/manifests
+    lockfile=$jdir/job.lock
+    mkdir -p "$snaps_dir" "$manifests_dir"
+
+    if ! lock_acquire "$lockfile"; then
+        return 1
+    fi
+
+    local ts snap_dir manifest_file
+    ts=$(timestamp)
+    snap_dir=$snaps_dir/$ts
+    manifest_file=$manifests_dir/$ts.txt
+    mkdir -p "$snap_dir"
+
+    log_info "[$name] 扫描 $src"
+    local -a files=()
+    while IFS= read -r relpath; do
+        if (( ${#excludes[@]} > 0 )) && filter_path_excluded "$relpath" "${excludes[@]}"; then
+            log_debug "[$name] skip $relpath"
+            continue
+        fi
+        files+=("$relpath")
+    done < <(scan_files "$src")
+
+    log_info "[$name] 拷贝 ${#files[@]} 个文件 → $snap_dir"
+    local relpath dest_path dest_dir
+    for relpath in "${files[@]}"; do
+        dest_path=$snap_dir/$relpath
+        dest_dir=$(path_dirname "$dest_path")
+        mkdir -p "$dest_dir"
+        cp -a "$src/$relpath" "$dest_path"
+    done
+
+    log_info "[$name] 写 manifest → $manifest_file"
+    printf '%s\n' "${files[@]}" | manifest_build "$snap_dir" > "$manifest_file"
+
+    # 维护 latest 软链——放在 job 根目录而不是 snapshots/ 里，
+    # 这样 prune_snapshots 就只看真实的时间戳目录，不会把符号链接
+    # 当成"最新的快照"误删真实数据
+    ln -sfn "snapshots/$ts" "$jdir/latest"
+
+    log_info "[$name] 完成: $ts (keep=$keep)"
+    prune_snapshots "$snaps_dir" "$keep" || log_warn "[$name] prune 失败"
+    sweep_orphan_manifests "$manifests_dir" "$snaps_dir"
+}
+
+cmd_run() {
+    local target=${1:-}
+    case $target in
+        ''|--all)
+            local -a names=()
+            local f n
+            for f in "$JOBS_DIR"/*.conf; do
+                n=$(path_basename "$f"); n=${n%.conf}
+                names+=("$n")
+            done
+            (( ${#names[@]} == 0 )) && { log_warn "没有任务"; return 0; }
+
+            local jobs=${BKP_JOBS:-1}
+            if (( jobs > 1 )); then
+                log_info "并发跑 ${#names[@]} 个任务 (jobs=$jobs)"
+                local n
+                for n in "${names[@]}"; do
+                    printf '%s\t%s run %s\n' "$n" "$0" "$n"
+                done | parallel_run "$jobs"
+            else
+                local n rc=0
+                for n in "${names[@]}"; do
+                    run_one "$n" || rc=$?
+                done
+                return "$rc"
+            fi
+            ;;
+        *)
+            run_one "$target"
+            ;;
+    esac
+}
+
+cmd_status() {
+    local target=${1:-}
+    if [[ -n $target ]]; then
+        local last count
+        last=$(list_snapshots "$target" | tail -1)
+        count=$(list_snapshots "$target" | wc -l)
+        printf 'job=%s snapshots=%d latest=%s\n' "$target" "$count" "${last:--}"
+        return 0
+    fi
+    local f name
+    for f in "$JOBS_DIR"/*.conf; do
+        name=$(path_basename "$f"); name=${name%.conf}
+        cmd_status "$name"
+    done
+}
+
+cmd_diff() {
+    local name=${1:-}
+    if [[ -z $name ]]; then
+        echo "usage: bkp diff <name> [ts1 ts2]" >&2
+        return 2
+    fi
+    local manifests_dir
+    manifests_dir=$(job_dir "$name")/manifests
+    local ts1=${2:-} ts2=${3:-}
+    if [[ -z $ts1 || -z $ts2 ]]; then
+        local -a all=()
+        local m
+        for m in "$manifests_dir"/*.txt; do
+            all+=("$m")
+        done
+        (( ${#all[@]} >= 2 )) || { log_error "至少需要两个快照才能 diff"; return 1; }
+        ts1=$(path_basename "${all[-2]}"); ts1=${ts1%.txt}
+        ts2=$(path_basename "${all[-1]}"); ts2=${ts2%.txt}
+    fi
+    log_info "diff $name $ts1 → $ts2"
+    manifest_diff "$manifests_dir/$ts1.txt" "$manifests_dir/$ts2.txt"
+}
+
+cmd_restore() {
+    local name=${1:-} ts=${2:-} dest=${3:-} maybe_force=${4:-}
+    if [[ -z $name || -z $ts || -z $dest ]]; then
+        echo "usage: bkp restore <name> <ts> <dest> [--force]" >&2
+        return 2
+    fi
+    local snap_dir
+    snap_dir=$(job_dir "$name")/snapshots/$ts
+    restore_snapshot "$snap_dir" "$dest" "$maybe_force"
+    log_info "恢复完成: $name@$ts → $dest"
+}
+
+cmd_prune() {
+    local name=${1:-}
+    if [[ -z $name ]]; then
+        echo "usage: bkp prune <name> [--keep=N]" >&2
+        return 2
+    fi
+    local src excludes keep
+    excludes=(); keep=10
+    load_job "$name" || return 1
+
+    if [[ ${2:-} == --keep=* ]]; then
+        keep=${2#--keep=}
+    fi
+    check_positive_int "$keep" keep || return 1
+    local snaps_dir manifests_dir
+    snaps_dir=$(job_dir "$name")/snapshots
+    manifests_dir=$(job_dir "$name")/manifests
+    prune_snapshots "$snaps_dir" "$keep"
+    sweep_orphan_manifests "$manifests_dir" "$snaps_dir"
+    log_info "prune $name (keep=$keep) 完成"
+}
+
+cmd_verify() {
+    local name=${1:-} ts=${2:-}
+    if [[ -z $name ]]; then
+        echo "usage: bkp verify <name> [ts]" >&2
+        return 2
+    fi
+    local manifests_dir snaps_dir
+    manifests_dir=$(job_dir "$name")/manifests
+    snaps_dir=$(job_dir "$name")/snapshots
+    if [[ -z $ts ]]; then
+        local -a all=()
+        local m
+        for m in "$manifests_dir"/*.txt; do all+=("$m"); done
+        (( ${#all[@]} >= 1 )) || { log_error "没有 manifest 可校验"; return 1; }
+        ts=$(path_basename "${all[-1]}"); ts=${ts%.txt}
+    fi
+    log_info "verify $name@$ts"
+    manifest_verify "$manifests_dir/$ts.txt" "$snaps_dir/$ts"
+}
+
+# ---------------------------------------------------------------
+# 入口：parse + dispatch（来自 ch7）
+# ---------------------------------------------------------------
+main() {
+    if [[ ${1:-} == --debug ]]; then
+        enable_debug
+        shift
+    fi
+    if (( $# == 0 )); then
+        echo "usage: bkp <command> [args...]   ('bkp help' 看子命令列表)" >&2
+        return 2
+    fi
+    case ${1:-} in
+        -h|--help|help)
+            sed -n '3,/^$/p' "${BASH_SOURCE[0]}" | sed 's/^# \?//'
+            return 0
+            ;;
+    esac
+    dispatch "$@"
+}
+
+main "$@"
