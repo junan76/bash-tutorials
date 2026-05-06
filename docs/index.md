@@ -16,13 +16,13 @@
 | #   | 主题                                                                  | bkp 增量                                  |
 | --- | --------------------------------------------------------------------- | ----------------------------------------- |
 | 1   | [变量、引用、参数展开](chapters/01-variables.md)                      | `lib/path.sh`                             |
-| 2   | 条件、test、布尔逻辑                                                  | `lib/check.sh`                            |
-| 3   | 循环、数组、模式匹配                                                  | `lib/scan.sh` + `lib/filter.sh`           |
-| 4   | 函数、作用域、库复用                                                  | `lib/log.sh` + `lib/lock.sh`              |
-| 5   | I/O 重定向、管道、文件描述符                                          | 主程序 I/O + manifest                     |
-| 6   | 进程、并发、进程替换                                                  | `bkp run --all` + `bkp diff`              |
-| 7   | 调试与命令行参数解析                                                  | `bkp` CLI dispatcher + `--debug`          |
-| 8   | 综合：健壮性收尾与集成                                                | `prune`/`verify`/`restore` + 集成测试     |
+| 2   | [条件、test、布尔逻辑](chapters/02-conditions.md)                     | `lib/check.sh`                            |
+| 3   | [循环、数组、模式匹配](chapters/03-loops-patterns.md)                 | `lib/scan.sh` + `lib/filter.sh`           |
+| 4   | [函数、作用域、库复用](chapters/04-functions.md)                      | `lib/log.sh` + `lib/lock.sh`              |
+| 5   | [I/O 重定向、管道、文件描述符](chapters/05-io.md)                     | `lib/manifest.sh`                         |
+| 6   | [进程、并发、进程替换](chapters/06-processes.md)                      | `lib/parallel.sh` + `lib/diff.sh`         |
+| 7   | [调试与命令行参数解析](chapters/07-debug-cli.md)                      | `lib/cli.sh` + `--debug`                  |
+| 8   | [综合：健壮性收尾与集成](chapters/08-capstone.md)                     | `lib/maint.sh`（prune/restore）+ 集成     |
 
 健壮性（`set -euo pipefail`、`trap`、shellcheck、幂等）贯穿全程而不是单列一章——每章渐进引入一项。
 

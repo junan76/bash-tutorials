@@ -62,8 +62,8 @@ requirements.txt
 | 3   | 循环、数组、模式匹配              | `lib/scan.sh` + `lib/filter.sh`                       |
 | 4   | 函数、作用域、库复用              | `lib/log.sh` + `lib/lock.sh`                          |
 | 5   | I/O 重定向、管道、文件描述符      | `lib/manifest.sh`（sha256 清单生成与验证）            |
-| 6   | 进程、并发、进程替换              | `bkp run --all` + `bkp diff`                          |
-| 7   | 调试与命令行参数解析              | `bkp` CLI dispatcher + `--debug`                      |
-| 8   | 综合：健壮性收尾与集成            | 整体打磨 + `prune`/`verify`/`restore` + 集成测试       |
+| 6   | 进程、并发、进程替换              | `lib/parallel.sh` + `lib/diff.sh`                     |
+| 7   | 调试与命令行参数解析              | `lib/cli.sh` + `--debug`                              |
+| 8   | 综合：健壮性收尾与集成            | `lib/maint.sh`（prune + restore）+ 整合 `bkp` 主程序  |
 
-健壮性（`set -euo pipefail`、`trap`、shellcheck、幂等）不是单独一章，而是**贯穿全程**：ch1 引入 `set -e`、ch2 加 `set -u`、ch4 加 `trap`、ch5 加 `pipefail`、ch7 加 shellcheck，ch8 集大成。
+健壮性（`set -euo pipefail`、`trap`、shellcheck、幂等）不是单独一章，而是**贯穿全程**：ch1 引入 `set -e`、ch2 加 `set -u`、ch3 加 `nullglob`、ch4 加 `trap` + `local`、ch5 加 `pipefail`、ch7 加 `bash -x` + 自定义 `PS4`，ch8 收尾在幂等 + 集成测试 + shellcheck。
